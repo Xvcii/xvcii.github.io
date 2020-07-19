@@ -6,7 +6,7 @@
 
 <title>关于OllyDbg内存和栈中数据存放顺序 | Gridea</title>
 
-<link rel="shortcut icon" href="https://xvcii.github.io/favicon.ico?v=1595155069936">
+<link rel="shortcut icon" href="https://xvcii.github.io/favicon.ico?v=1595155503683">
 
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://xvcii.github.io/styles/main.css">
@@ -118,8 +118,8 @@
 <img src="https://xvcii.github.io/post-images/1594826091341.png" alt="" loading="lazy"><br>
 但在<strong>栈窗口</strong>中查看这个地址时，OllyDbg帮我们以小端模式显示了，<strong>看起来</strong>就是正的（只是方便你看！内存里该什么样依旧什么样）<br>
 <img src="https://xvcii.github.io/post-images/1594825927426.png" alt="" loading="lazy"></p>
-<p>不过如果你关心的是<strong>某一个字节的地址</strong>，就要特别注意大小端问题了，你应该把左图脑部成右图的形式</p>
-<img src="file://C:/Users/pass_/OneDrive/Documents/Gridea/post-images/1594825399026.png" width="60%">
+<p>不过如果你关心的是<strong>某一个字节的地址</strong>，就要特别注意大小端问题了，你应该把左图脑部成右图的形式<br>
+<img src="https://xvcii.github.io/post-images/1594825399026.png" alt="" loading="lazy"></p>
 <h1 id="四-补充说明">四、补充说明：</h1>
 <p>4个字节为一组，选最高地址还是最低地址来代表这个组根本不重要，不要太纠结这里，就像汽车要么靠左行驶要么靠右行驶，两个里总要选一个把。大小端模式同理（Intel CPU常用大端， ARM　CPU常用小端）</p>
 <p>为了举例方便，我选了一个栈地址0x0012FB24，由于栈本质上就是内存的某一块区域，所以可以方便我对比同一个地址在数据窗口和栈窗口的显示区别。</p>
