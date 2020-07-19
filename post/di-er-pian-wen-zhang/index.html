@@ -1,0 +1,189 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>第21章：Windows消息钩取 | Gridea</title>
+
+<link rel="shortcut icon" href="https://xvcii.github.io/favicon.ico?v=1595155069936">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://xvcii.github.io/styles/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script>
+
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            Gridea
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    第21章：Windows消息钩取
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-02-18 ·
+                    </time>
+                    
+                        <a href="https://xvcii.github.io/tag/651Vto-jX/" class="post-tags">
+                            # 读书笔记之《逆向工程核心原理》
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>以下程序使用VS2013在Windows10-1909下完成</p>
+<h1 id="part-i为什么32位dll注入64位进程会卡">Part Ⅰ：为什么32位Dll注入64位进程会卡？</h1>
+<p>一句话回答：注入器缺少消息循环</p>
+<p>MSDN上对于<code>SetWindowHookEx()</code>的解释中有提到：</p>
+<blockquote>
+<p>Because hooks run in the context of an application, they must match the &quot;bitness&quot; of the application. If a 32-bit application installs a global hook on 64-bit Windows, the 32-bit hook is injected into each 32-bit process (the usual security boundaries apply). In a 64-bit process, the threads are still marked as &quot;hooked.&quot;  However, because a 32-bit application must run the hook code, the system executes the hook in the hooking app's context; specifically, on the thread that called SetWindowsHookEx. This means that <strong>the hooking application must continue to pump messages</strong> or it might block the normal functioning of the 64-bit processes<a href="https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexa">🔗原文</a></p>
+</blockquote>
+<blockquote>
+<p>大意：Dll是在宿主的线程上下文中执行的，二者的“位数”必须匹配。如果一个32位注入器在64位[^备注2]Windows上安装全局钩子，则32位的Dll被注入到每一个32位进程中。对于64位进程，线程仍然会被标记为“已下钩”。然而，由于32位注入器必须执行钩子代码，系统将会在注入器的上下文中执行钩子，特别是那个调用SetWindowsHookEx的线程。这意味着注入器必须持续泵送消息，否则可能会阻塞64位进程的正常功能</p>
+</blockquote>
+<p>但微软的解释并不是很清楚，所以我又查了很多资料，在StackOverflow上的一篇帖子有更详细的解释：</p>
+<blockquote>
+<p>In case the &quot;bitness&quot; differs, Windows takes a fallback detour back to the process and thread that initially called SetWindowsHookEx() , and serves as an execution-proxy for the process that doesn't match the &quot;bitness&quot;. For this reason, <strong>it is required for this thread to constantly handle incoming messages</strong>, otherwise no events will be processed for the original target process which in return starts hanging<a href="https://stackoverflow.com/questions/15542783/global-keyhook-on-64-bit-windows#">🔗原文</a></p>
+</blockquote>
+<blockquote>
+<p>大意：当32位Dll注入64位程序时，系统会把调用<code>SetWindowsHookEx()</code>的线程设置为被注入方的消息代理，本该发给被注入方的消息现在发给了我们的注入线程。由此，需要该线程持续不断地处理进来的消息，否则被注入方的消息得不到处理，就会表现为“卡住”。</p>
+</blockquote>
+<p>如果不想64位进程被卡住，只需要在注入器的代码中添加一个消息循环来转发消息[^备注1]特别要注意，消息循环必须由调用<code>SetWindowsHookEx()</code>的线程来执行。</p>
+<pre><code class="language-c">    //获取消息和获取用户输入都要求实时性，所以整个循环不能有阻塞
+    MSG msg;
+    while (1)
+    {
+        //不用GetMessage从而避免循环阻塞
+        if (PeekMessage(&amp;msg, NULL, 0, 0, PM_REMOVE))
+        {
+            DispatchMessage(&amp;msg);
+        }
+        //先查看有无键盘输入再用getchar取值，防止循环阻塞
+        if (kbhit())
+        {
+            if (_getch() == 'q')
+            {
+                break;
+            }
+        }
+    }
+</code></pre>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://xvcii.github.io/post/hello-gridea/" class="post-title gt-a-link">
+                    Hello Gridea
+                </a>
+            </div>
+        
+
+        
+
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">温故而知新</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+    </div>
+    <div>
+        Theme by <a href="https://imhanjie.com/" target="_blank">imhanjie</a>, Powered by <a
+                href="https://github.com/getgridea/gridea" target="_blank">Gridea | <a href="https://xvcii.github.io/atom.xml" target="_blank">RSS</a></a>
+    </div>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

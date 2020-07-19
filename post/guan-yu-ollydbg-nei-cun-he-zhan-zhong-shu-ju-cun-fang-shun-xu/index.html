@@ -1,0 +1,179 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+<title>关于OllyDbg内存和栈中数据存放顺序 | Gridea</title>
+
+<link rel="shortcut icon" href="https://xvcii.github.io/favicon.ico?v=1595155069936">
+
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://xvcii.github.io/styles/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script>
+
+<!-- DEMO JS -->
+<!--<script src="media/scripts/index.js"></script>-->
+
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            Gridea
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    关于OllyDbg内存和栈中数据存放顺序
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-07-15 ·
+                    </time>
+                    
+                </div>
+                <div class="post-content">
+                    <p>需要精确修改OllyDbg内存和栈窗口中的数据时，经常搞不清楚数据的方向问题，现在做个总结。</p>
+<p>提示：如果你对OllyDbg的栈窗口和数据窗口不熟悉可以看下图，左边是数据窗口用于显示整个内存中的数据，右边是栈窗口用于显示内存中属于栈的那部分的数据。<br>
+<img src="https://xvcii.github.io/post-images/1594827582850.png" alt="" loading="lazy"></p>
+<h1 id="一-栈由高地址向低地址扩展">一、栈由高地址向低地址扩展</h1>
+<p>如图，箭头方向就是栈的扩展方向，每执行一次push红色框就向上移动一格<br>
+<img src="https://xvcii.github.io/post-images/1594823000883.png" alt="" loading="lazy"></p>
+<h1 id="二-intel-cpu的内存采用大端模式存放数据">二、Intel CPU的内存采用大端模式存放数据</h1>
+<p>大端模式指数据以字节为单位，高位放高地址，低位放低地址（也叫大端模式，与人习惯的阅读顺序相反）</p>
+<p>如内存地址0x0012FB24存放着数据0x00401122，在<strong>数据窗口</strong>中查看时实际存放顺序如下：</p>
+<ul>
+<li>0x0012FB24是最低地址，放最低位数据22；</li>
+<li>0x0012FB25是第二低地址，放第二低位数据11</li>
+<li>......</li>
+<li>0x0012FB27是最高位地址，放最高位数据00<br>
+<img src="https://xvcii.github.io/post-images/1594823986694.png" alt="" loading="lazy"></li>
+</ul>
+<h1 id="三-ollydbg以小端模式显示栈中数据">三、OllyDbg以小端模式显示栈中数据</h1>
+<p>先介绍一下栈的基本性质：</p>
+<ul>
+<li>栈的最小单位是4个字节（即以4个字节为一组来存数据）</li>
+<li>OllyDbg选则4字节中最低的那个地址来代表这个组。</li>
+</ul>
+<p>还是前面那个例子，内存地址0x0012FB24存放着数据0x00401122，当在<strong>数据窗口</strong>查看时就是他最原始的样子 22 11 40 00，看着特别难受<br>
+<img src="https://xvcii.github.io/post-images/1594826091341.png" alt="" loading="lazy"><br>
+但在<strong>栈窗口</strong>中查看这个地址时，OllyDbg帮我们以小端模式显示了，<strong>看起来</strong>就是正的（只是方便你看！内存里该什么样依旧什么样）<br>
+<img src="https://xvcii.github.io/post-images/1594825927426.png" alt="" loading="lazy"></p>
+<p>不过如果你关心的是<strong>某一个字节的地址</strong>，就要特别注意大小端问题了，你应该把左图脑部成右图的形式</p>
+<img src="file://C:/Users/pass_/OneDrive/Documents/Gridea/post-images/1594825399026.png" width="60%">
+<h1 id="四-补充说明">四、补充说明：</h1>
+<p>4个字节为一组，选最高地址还是最低地址来代表这个组根本不重要，不要太纠结这里，就像汽车要么靠左行驶要么靠右行驶，两个里总要选一个把。大小端模式同理（Intel CPU常用大端， ARM　CPU常用小端）</p>
+<p>为了举例方便，我选了一个栈地址0x0012FB24，由于栈本质上就是内存的某一块区域，所以可以方便我对比同一个地址在数据窗口和栈窗口的显示区别。</p>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://xvcii.github.io/post/fen-duan-ji-zhi/" class="post-title gt-a-link">
+                    分段机制
+                </a>
+            </div>
+        
+
+        
+
+        
+
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">温故而知新</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    </div>
+    <div class="footer-info">
+        Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+    </div>
+    <div>
+        Theme by <a href="https://imhanjie.com/" target="_blank">imhanjie</a>, Powered by <a
+                href="https://github.com/getgridea/gridea" target="_blank">Gridea | <a href="https://xvcii.github.io/atom.xml" target="_blank">RSS</a></a>
+    </div>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://xvcii.github.io</id>
+    <title>Gridea</title>
+    <updated>2020-07-19T10:37:53.578Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://xvcii.github.io"/>
+    <link rel="self" href="https://xvcii.github.io/atom.xml"/>
+    <subtitle>温故而知新</subtitle>
+    <logo>https://xvcii.github.io/images/avatar.png</logo>
+    <icon>https://xvcii.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2020, Gridea</rights>
+    <entry>
+        <title type="html"><![CDATA[关于OllyDbg内存和栈中数据存放顺序]]></title>
+        <id>https://xvcii.github.io/post/guan-yu-ollydbg-nei-cun-he-zhan-zhong-shu-ju-cun-fang-shun-xu/</id>
+        <link href="https://xvcii.github.io/post/guan-yu-ollydbg-nei-cun-he-zhan-zhong-shu-ju-cun-fang-shun-xu/">
+        </link>
+        <updated>2020-07-14T17:46:31.000Z</updated>
+        <content type="html"><![CDATA[<p>需要精确修改OllyDbg内存和栈窗口中的数据时，经常搞不清楚数据的方向问题，现在做个总结。</p>
+<p>提示：如果你对OllyDbg的栈窗口和数据窗口不熟悉可以看下图，左边是数据窗口用于显示整个内存中的数据，右边是栈窗口用于显示内存中属于栈的那部分的数据。<br>
+<img src="https://xvcii.github.io/post-images/1594827582850.png" alt="" loading="lazy"></p>
+<h1 id="一-栈由高地址向低地址扩展">一、栈由高地址向低地址扩展</h1>
+<p>如图，箭头方向就是栈的扩展方向，每执行一次push红色框就向上移动一格<br>
+<img src="https://xvcii.github.io/post-images/1594823000883.png" alt="" loading="lazy"></p>
+<h1 id="二-intel-cpu的内存采用大端模式存放数据">二、Intel CPU的内存采用大端模式存放数据</h1>
+<p>大端模式指数据以字节为单位，高位放高地址，低位放低地址（也叫大端模式，与人习惯的阅读顺序相反）</p>
+<p>如内存地址0x0012FB24存放着数据0x00401122，在<strong>数据窗口</strong>中查看时实际存放顺序如下：</p>
+<ul>
+<li>0x0012FB24是最低地址，放最低位数据22；</li>
+<li>0x0012FB25是第二低地址，放第二低位数据11</li>
+<li>......</li>
+<li>0x0012FB27是最高位地址，放最高位数据00<br>
+<img src="https://xvcii.github.io/post-images/1594823986694.png" alt="" loading="lazy"></li>
+</ul>
+<h1 id="三-ollydbg以小端模式显示栈中数据">三、OllyDbg以小端模式显示栈中数据</h1>
+<p>先介绍一下栈的基本性质：</p>
+<ul>
+<li>栈的最小单位是4个字节（即以4个字节为一组来存数据）</li>
+<li>OllyDbg选则4字节中最低的那个地址来代表这个组。</li>
+</ul>
+<p>还是前面那个例子，内存地址0x0012FB24存放着数据0x00401122，当在<strong>数据窗口</strong>查看时就是他最原始的样子 22 11 40 00，看着特别难受<br>
+<img src="https://xvcii.github.io/post-images/1594826091341.png" alt="" loading="lazy"><br>
+但在<strong>栈窗口</strong>中查看这个地址时，OllyDbg帮我们以小端模式显示了，<strong>看起来</strong>就是正的（只是方便你看！内存里该什么样依旧什么样）<br>
+<img src="https://xvcii.github.io/post-images/1594825927426.png" alt="" loading="lazy"></p>
+<p>不过如果你关心的是<strong>某一个字节的地址</strong>，就要特别注意大小端问题了，你应该把左图脑部成右图的形式</p>
+<img src="file://C:/Users/pass_/OneDrive/Documents/Gridea/post-images/1594825399026.png" width="60%">
+<h1 id="四-补充说明">四、补充说明：</h1>
+<p>4个字节为一组，选最高地址还是最低地址来代表这个组根本不重要，不要太纠结这里，就像汽车要么靠左行驶要么靠右行驶，两个里总要选一个把。大小端模式同理（Intel CPU常用大端， ARM　CPU常用小端）</p>
+<p>为了举例方便，我选了一个栈地址0x0012FB24，由于栈本质上就是内存的某一块区域，所以可以方便我对比同一个地址在数据窗口和栈窗口的显示区别。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[分段机制]]></title>
+        <id>https://xvcii.github.io/post/fen-duan-ji-zhi/</id>
+        <link href="https://xvcii.github.io/post/fen-duan-ji-zhi/">
+        </link>
+        <updated>2020-07-01T15:22:21.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="16位处理器">16位处理器</h1>
+<p>分段机制第一次出现是在8086处理器上。当时该处理器面临一个问题，这是一个16位处理器，所有的寄存器都只有16位大小，但是由于某种需求，需要访问1MB的内存空间，这得要20位的寄存器才能寻址这么大的内存空间，如何解决？</p>
+<p>方法是不要把整个内存从头到尾一次性完成编号（即分配内存地址），而是把内存分为若干个片段，然后每个片段内的编号就从该段的起始处开始算，只要划分的片段数量合适，那么用两个16位寄存器就能分别存放“段地址”和“段内偏移”，然后将二者拼接就能形成完整的20位地址。</p>
+<p>实际的做法是每个段设计为64kb</p>
+<p>比如一个20位的地址0x12345，实际上是由段地址0x12340和段内偏移0x5组合而成的，当然0x12340无法存进16位寄存器，实际存的是0x1234，拼接时先左移4位，再加上段内偏移就行了。</p>
+<h1 id="32位处理器">32位处理器</h1>
+<ul>
+<li>
+<p>分段机制依然存在<br>
+32位处理器理论上不需要分段，寄存器足够大了，但是32位处理器依然基于分段模型（有新的需求出现），所以依然需要以段为单位访问内存，即时它工作在32位模式下<br>
+不过提出了一种变通的方案，即只分一个段，段的基地址是0x00000000，段的长度（大小）是4GB。在这种情况下，可以视为不分段，即平坦模型（Flat Mode）</p>
+</li>
+<li>
+<p>分段的存在不是为了寻址，而是为了32位保护模式<br>
+当然段寄存器并不是没用了，32位模式下段寄存器有了新的工作，它不再保存段的基地址，而是变成了段选择器，每个段选择器还有一个描述符高速缓存器，它里面就包含有段的基地址以及段的各种访问属性。</p>
+</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[解决IDA Python 无法使用的问题]]></title>
+        <id>https://xvcii.github.io/post/jie-jue-ida-python-wu-fa-shi-yong-de-wen-ti/</id>
+        <link href="https://xvcii.github.io/post/jie-jue-ida-python-wu-fa-shi-yong-de-wen-ti/">
+        </link>
+        <updated>2020-03-01T18:19:34.000Z</updated>
+        <content type="html"><![CDATA[<img src="file://C:/Users/pass_/OneDrive/Documents/Gridea/post-images/1583086816958.png" width="60%">
+ <img src="file://C:/Users/pass_/OneDrive/Documents/Gridea/post-images/1583086816958.png" width = "300" height = "200" alt="图片名称" align=center />]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[💉关于注入、钩子等的小结]]></title>
+        <id>https://xvcii.github.io/post/guan-yu-zhu-ru-gou-zi-deng-de-xiao-jie/</id>
+        <link href="https://xvcii.github.io/post/guan-yu-zhu-ru-gou-zi-deng-de-xiao-jie/">
+        </link>
+        <updated>2020-02-20T17:10:51.000Z</updated>
+        <content type="html"><![CDATA[<p>《逆向分析核心原理》第三、四部分重点讲了各种注入、API钩子、消息钩子等手法，但并没有讲清楚这些技术手法之间的逻辑关系，看完了觉得很混乱，于是自己整理了一下。</p>
+<h1 id="1-让目标进程运行我写的代码">#1 让目标进程运行我写的代码</h1>
+<p>不管使用什么办法，目的都是为了能在对方进程中运行我们的代码，书中介绍的方法有这么几种：</p>
+<ul>
+<li>若要运行的代码简单，就直接注入代码；
+<ul>
+<li>普通的代码注入</li>
+<li>用汇编语言写注入代码</li>
+</ul>
+</li>
+<li>若要运行的代码复杂，就把代码写进Dll，再注入Dll；
+<ul>
+<li>创建远程线程 CreateRemoteThread</li>
+<li>使用注册表AppInit_Dlls值</li>
+<li>消息钩取 SetWindowHookEx</li>
+<li>修改PE文件的IAT</li>
+</ul>
+</li>
+<li>简单粗暴地以调试方式打开目标进程</li>
+</ul>
+<p>这几个方式也各有优劣，比如注入Dll就很容易被检测出来，注入代码则很难被检测，而用调试方式打开目标进程很容易被针对，比如对方如果内部自带一个调试器，使自身以调试方式打开，那就不会允许第二个调试器的存在了。</p>
+<h1 id="2-代码能运行了我能做点什么事">#2 代码能运行了，我能做点什么事？</h1>
+<p>一旦我们的代码能在对方的进程里运行起来，就可以做很多事了，API钩子、消息钩子之类的。书中重点讲了API钩子。给系统API下钩子的方式有：<strong>5字节修改、高端5字节修改、7字节修改</strong></p>
+<ul>
+<li>
+<p>方式1：性能差稳定性差，要频繁“修改+复原”，但通用性强</p>
+</li>
+<li>
+<p>方式2：性能好稳定性好，修改5字节的同时将原API复制一份，等需要调用原API时就调用复制的，即避免频繁“修改+复原”。但要处理地址重定位的问题，比较麻烦。（Ntdll.dll的API代码短，且内部地址无依赖性，不需要重定位，故非常适合此技术）</p>
+</li>
+<li>
+<p>方式3：性能好稳定性好，不需要频繁“修改+复原”，但对API前7个字节有要求（要求前7个字节是无用的，可以随便改而不影响API功能，微软故意给部分API预留了，方便他自己下钩子）通用性差</p>
+</li>
+</ul>
+<p>注意，这种直接修改API代码的方式也叫做InlineHook，相对的IATHOOK是另一种Hook的方式，它只是简单地修改目标IAT表里的指针。<br>
+当然也可以不通过跳转来执行我们的代码，而是直接修改或破坏原始的API</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[让VS2013编译的程序运行在Windows XP上]]></title>
+        <id>https://xvcii.github.io/post/rang-vs2013-bian-yi-de-cheng-xu-yun-xing-zai-windows-xp-shang/</id>
+        <link href="https://xvcii.github.io/post/rang-vs2013-bian-yi-de-cheng-xu-yun-xing-zai-windows-xp-shang/">
+        </link>
+        <updated>2020-02-18T14:35:27.000Z</updated>
+        <content type="html"><![CDATA[<p>很多时候为了验证一些想法，需要在Windows XP上运行我们的程序，但VS2013编译出的程序直接在Windows XP上运行会报错，如何解决？</p>
+<ul>
+<li>项目-属性-常规-平台工具集，选带XP的那一项<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup></li>
+<li>项目-属性-常规-在静态库中使用MFC<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup></li>
+<li>代码中添加 <code>#pragma comment (lib,&quot;user32&quot;)</code><sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup></li>
+<li>安装MFC针对“多字节字符集”的补丁<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup><a href="https://docs.microsoft.com/zh-cn/cpp/mfc/mfc-mbcs-dll-add-on?view=vs-2019">【补丁下载】</a></li>
+</ul>
+<p>从VS2019开始上述方式将不再有效，微软已经明确声明停止对Windows XP的兼容，而<br>
+理论上该方法对低于VS2019的版本都有效，但我只测试了VS2013</p>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>该设置解决.exe运行报错“不是有效的Win32” <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p>该设置解决.exe运行报错“缺少XXXX.dll“ <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p>该设置解决链接报错“无法解析的外部符号” <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn4" class="footnote-item"><p>该设置解决编译报错“MFC默认不再支持多字节字符集” <a href="#fnref4" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[第22章：恶意键盘记录器]]></title>
+        <id>https://xvcii.github.io/post/di-san-pian-wen-zhang/</id>
+        <link href="https://xvcii.github.io/post/di-san-pian-wen-zhang/">
+        </link>
+        <updated>2020-02-17T18:30:36.000Z</updated>
+        <content type="html"><![CDATA[<p>这是一些代码</p>
+<pre><code class="language-c">LRESULT CALLBACK KeyboardProc(INT nCode, WPARAM wParam, LPARAM lParam)
+{
+	TCHAR szPath[MAX_PATH] = { 0, };
+	TCHAR* p = NULL;
+
+	if (nCode == HC_ACTION)//表示该消息需要被处理
+	{
+		//第31位 若=0表按键按下，若=1表按键释放
+		if (!(lParam &amp; 0x80000000))//如果释放按键
+		{
+			//获取进程名
+			GetModuleFileName(NULL, szPath, MAX_PATH);
+			p = strrchr(szPath, '\\');
+
+			//比较进程名，若为目标，则消息不会传递给该目标（或下一个“钩子”）
+			if (!_stricmp(p + 1, DEF_PROCESS_NAME))
+			{
+				return 1;
+			}
+		}
+	}
+
+	//比较进程名，若非目标，则将消息传递给该目标（或下一个“钩子”）
+	return CallNextHookEx(g_hHook, nCode, wParam, lParam);
+
+}
+</code></pre>
+<p>3D图像生成软件fiber</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[第21章：Windows消息钩取]]></title>
+        <id>https://xvcii.github.io/post/di-er-pian-wen-zhang/</id>
+        <link href="https://xvcii.github.io/post/di-er-pian-wen-zhang/">
+        </link>
+        <updated>2020-02-17T18:30:24.000Z</updated>
+        <content type="html"><![CDATA[<p>以下程序使用VS2013在Windows10-1909下完成</p>
+<h1 id="part-i为什么32位dll注入64位进程会卡">Part Ⅰ：为什么32位Dll注入64位进程会卡？</h1>
+<p>一句话回答：注入器缺少消息循环</p>
+<p>MSDN上对于<code>SetWindowHookEx()</code>的解释中有提到：</p>
+<blockquote>
+<p>Because hooks run in the context of an application, they must match the &quot;bitness&quot; of the application. If a 32-bit application installs a global hook on 64-bit Windows, the 32-bit hook is injected into each 32-bit process (the usual security boundaries apply). In a 64-bit process, the threads are still marked as &quot;hooked.&quot;  However, because a 32-bit application must run the hook code, the system executes the hook in the hooking app's context; specifically, on the thread that called SetWindowsHookEx. This means that <strong>the hooking application must continue to pump messages</strong> or it might block the normal functioning of the 64-bit processes<a href="https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexa">🔗原文</a></p>
+</blockquote>
+<blockquote>
+<p>大意：Dll是在宿主的线程上下文中执行的，二者的“位数”必须匹配。如果一个32位注入器在64位[^备注2]Windows上安装全局钩子，则32位的Dll被注入到每一个32位进程中。对于64位进程，线程仍然会被标记为“已下钩”。然而，由于32位注入器必须执行钩子代码，系统将会在注入器的上下文中执行钩子，特别是那个调用SetWindowsHookEx的线程。这意味着注入器必须持续泵送消息，否则可能会阻塞64位进程的正常功能</p>
+</blockquote>
+<p>但微软的解释并不是很清楚，所以我又查了很多资料，在StackOverflow上的一篇帖子有更详细的解释：</p>
+<blockquote>
+<p>In case the &quot;bitness&quot; differs, Windows takes a fallback detour back to the process and thread that initially called SetWindowsHookEx() , and serves as an execution-proxy for the process that doesn't match the &quot;bitness&quot;. For this reason, <strong>it is required for this thread to constantly handle incoming messages</strong>, otherwise no events will be processed for the original target process which in return starts hanging<a href="https://stackoverflow.com/questions/15542783/global-keyhook-on-64-bit-windows#">🔗原文</a></p>
+</blockquote>
+<blockquote>
+<p>大意：当32位Dll注入64位程序时，系统会把调用<code>SetWindowsHookEx()</code>的线程设置为被注入方的消息代理，本该发给被注入方的消息现在发给了我们的注入线程。由此，需要该线程持续不断地处理进来的消息，否则被注入方的消息得不到处理，就会表现为“卡住”。</p>
+</blockquote>
+<p>如果不想64位进程被卡住，只需要在注入器的代码中添加一个消息循环来转发消息[^备注1]特别要注意，消息循环必须由调用<code>SetWindowsHookEx()</code>的线程来执行。</p>
+<pre><code class="language-c">    //获取消息和获取用户输入都要求实时性，所以整个循环不能有阻塞
+    MSG msg;
+    while (1)
+    {
+        //不用GetMessage从而避免循环阻塞
+        if (PeekMessage(&amp;msg, NULL, 0, 0, PM_REMOVE))
+        {
+            DispatchMessage(&amp;msg);
+        }
+        //先查看有无键盘输入再用getchar取值，防止循环阻塞
+        if (kbhit())
+        {
+            if (_getch() == 'q')
+            {
+                break;
+            }
+        }
+    }
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Hello Gridea]]></title>
+        <id>https://xvcii.github.io/post/hello-gridea/</id>
+        <link href="https://xvcii.github.io/post/hello-gridea/">
+        </link>
+        <updated>2018-12-11T16:00:00.000Z</updated>
+        <summary type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+<!-- more -->
+<p><a href="https://github.com/getgridea/gridea">Github</a><br>
+<a href="https://gridea.dev/">Gridea 主页</a><br>
+<a href="http://fehey.com/">示例网站</a></p>
+<h2 id="特性">特性👇</h2>
+<p>📝  你可以使用最酷的 <strong>Markdown</strong> 语法，进行快速创作</p>
+<p>🌉  你可以给文章配上精美的封面图和在文章任意位置插入图片</p>
+<p>🏷️  你可以对文章进行标签分组</p>
+<p>📋  你可以自定义菜单，甚至可以创建外部链接菜单</p>
+<p>💻  你可以在 <strong>Windows</strong>，<strong>MacOS</strong> 或 <strong>Linux</strong> 设备上使用此客户端</p>
+<p>🌎  你可以使用 <strong>𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌</strong> 或 <strong>Coding Pages</strong> 向世界展示，未来将支持更多平台</p>
+<p>💬  你可以进行简单的配置，接入 <a href="https://github.com/gitalk/gitalk">Gitalk</a> 或 <a href="https://github.com/SukkaW/DisqusJS">DisqusJS</a> 评论系统</p>
+<p>🇬🇧  你可以使用<strong>中文简体</strong>或<strong>英语</strong></p>
+<p>🌁  你可以任意使用应用内默认主题或任意第三方主题，强大的主题自定义能力</p>
+<p>🖥  你可以自定义源文件夹，利用 OneDrive、百度网盘、iCloud、Dropbox 等进行多设备同步</p>
+<p>🌱 当然 <strong>Gridea</strong> 还很年轻，有很多不足，但请相信，它会不停向前 🏃</p>
+<p>未来，它一定会成为你离不开的伙伴</p>
+<p>尽情发挥你的才华吧！</p>
+<p>😘 Enjoy~</p>
+]]></content>
+    </entry>
+</feed>
